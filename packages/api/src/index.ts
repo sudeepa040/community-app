@@ -22,8 +22,11 @@ app.use(
   cors({
     origin: '*',
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow all HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
+// app.options('*', cors()); // Allows preflight requests for all routes
 
 app.use(passport.initialize());
 app.use(express.json());
