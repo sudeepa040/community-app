@@ -5,7 +5,7 @@
   "scripts": {
     "build": "lerna run build",
     "dev": "lerna run dev --stream",
-     "lint": "lerna run lint",
+    "lint": "lerna run lint",
     "ts:check": "lerna run ts:check",
     "create-super-admin": "node ./packages/api/createSuperAdmin.js"
   },
@@ -25,5 +25,8 @@
       "prettier --write"
     ]
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "mailgun.js": "^12.0.1"
+  }
 }
