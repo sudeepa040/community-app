@@ -17,7 +17,7 @@ initPassport();
 const app = express();
 app.use(
   cors({
-    origin: '*',
+    origin: process.env.FRONTEND_URL || '*',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow all HTTP methods
     allowedHeaders: ['Content-Type', 'Authorization'],
