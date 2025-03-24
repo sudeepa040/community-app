@@ -40,7 +40,6 @@ const Layout: FC<LayoutProps> = ({ children, hideLeftSidebar, hideRightSidebar, 
   return (
     <>
       <Seo />
-      {isAnnouncementOpen && <Announcement setIsAnnouncementOpen={setIsAnnouncementOpen} />}
       <Header ref={hamburgerRef} toggleSidebar={toggleSidebar} />
       <Root>
         {!hideLeftSidebar && <SideBar ref={sideBarRef} isOpen={isSideBarOpen} />}
