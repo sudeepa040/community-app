@@ -40,6 +40,7 @@ router.get('/google', passport.authenticate('google', { scope: 'profile email' }
 router.get('/google/callback', AuthController.googleCallback);
 router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
 router.get('/facebook/callback', AuthController.facebookCallback);
+router.post('/verifyHasuraAuth', AuthController.verifyHasuraAuth);
 
 /**
  * Users

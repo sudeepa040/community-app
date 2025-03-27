@@ -209,3 +209,12 @@ export const initPassport = (): void => {
     )
   );
 };
+
+export function isHasuraJWTPayload(payload: unknown): payload is any {
+  if (!payload || typeof payload !== 'object') return false;
+
+  const hasuraClaims = (payload as any)['https://hasura.io/jwt/claims'];
+  if (!hasuraClaims || typeof hasuraClaims !== 'object') return false;
+
+  return typeof hasuraClaims['x-hasura-user-id'] === 'string';
+}

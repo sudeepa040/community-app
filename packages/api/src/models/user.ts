@@ -16,11 +16,14 @@ const UserSchema = new Schema(
       type: String,
       required: true,
     },
+    hasuraUserId: {
+      type: String,
+      required: true,
+    },
     email: {
       type: String,
       lowercase: true,
       trim: true,
-      unique: true,
       required: true,
     },
     emailVerified: {
@@ -34,6 +37,27 @@ const UserSchema = new Schema(
     password: {
       type: String,
     },
+    phone: {
+      type: String, // Added phone field
+      trim: true,
+    },
+    devices: [
+      {
+        CB_Number: String,
+        Customer_ID: String,
+        Customer_Trial_ID: String,
+        PB_Number: String,
+        __metadata: Object,
+        bytebeamId: String,
+        createdAt: Date,
+        displayName: String,
+        serialNumber: String,
+        status: String,
+        updated_at: Date,
+        user: String,
+        version: String,  
+      },
+    ],
     username: {
       type: String,
       lowercase: true,

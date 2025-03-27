@@ -14,7 +14,9 @@ import {
 import { EmailRegex, ErrorCodes, ErrorMessages } from '../constants';
 import { sendEmail, getEmailTemplate, checkEmailVerification } from '../utils';
 import { URLSearchParams } from 'url';
-import { SocialProvider } from '../authentication';
+import { isHasuraJWTPayload, SocialProvider } from '../authentication';
+import fetch from 'node-fetch';
+import { User } from '../models';
 
 const AuthController = {
   authUser: async (req: Request, res: Response): Promise<any> => {
@@ -298,6 +300,104 @@ const AuthController = {
         });
       }
     )(req, res, next);
+  },
+  verifyHasuraAuth: async (req: Request, res: Response, next: NextFunction) => {
+    const token = req.body.token;
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    try {
+      const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET_KEY);
+      if (!isHasuraJWTPayload(payload)) throw new Error('Invalid JWT');
+      const userId = payload['https://hasura.io/jwt/claims']['x-hasura-user-id'];
+      if (!userId) throw new Error('userHID not found.');
+      console.log('userId', userId);
+      // Fetch user from Hasura
+      const response = await fetch(process.env.HASURA_GRAPHQL_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-hasura-admin-secret': process.env.HASURA_SECRET,
+        },
+        body: JSON.stringify({
+          query: `
+            query GetUser($id: uuid!) {
+              users_by_pk(id: $id) {
+                id
+                email
+                nickName
+                phone
+                devices{
+          CB_Number
+      Customer_ID
+      Customer_Trial_ID
+      PB_Number
+      __metadata
+      bytebeamId
+      createdAt
+      displayName
+      serialNumber
+      status
+      updated_at
+      user
+      version
+    }
+              }
+            }
+          `,
+          variables: { id: userId },
+        }),
+      });
+      const { data } = await response.json();
+      console.log('data', data);
+      if (!data.users_by_pk) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      // // Check if user exists in MongoDB (Orca DB)
+      const hasuraUserId = data.users_by_pk.id;
+      console.log('hasuraUserId', hasuraUserId);
+      let mongoUser = await User.findOne({ hasuraUserId });
+      if (mongoUser) {
+        console.log('User found in MongoDB:', mongoUser);
+        mongoUser;
+      } else {
+        const newUser = new User({
+          hasuraUserId,
+          phone: data.users_by_pk.phone || '',
+          fullName: data.users_by_pk.nickName || '',
+          email: data.users_by_pk.email || 'Random@gmail.com',
+          password: data.users_by_pk.password || '', // Store password if needed
+          role: data.users_by_pk.role || 'Regular',
+          devices: data.users_by_pk.devices || [],
+          emailVerified: data.users_by_pk.emailVerified || false,
+          banned: data.users_by_pk.banned || false,
+          facebookId: data.users_by_pk.facebookId || '',
+          googleId: data.users_by_pk.googleId || '',
+          githubId: data.users_by_pk.githubId || '',
+          isOnline: data.users_by_pk.isOnline || false,
+          posts: data.users_by_pk.posts || [],
+          likes: data.users_by_pk.likes || [],
+          comments: data.users_by_pk.comments || [],
+          followers: data.users_by_pk.followers || [],
+          following: data.users_by_pk.following || [],
+          notifications: data.users_by_pk.notifications || [],
+          messages: data.users_by_pk.messages || [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        mongoUser = await newUser.save(); // ✅ Save new user in MongoDB
+        console.log('New user created:', mongoUser);
+      }
+      const body = { _id: '67e3c4ee15399c504c2412a7', email: 'random@gmail.com' };
+      const userToken = jwt.sign({ user: body }, process.env.SECRET);
+      const authUser = await getAuthUser(mongoUser._id);
+      return res.cookie('token', userToken).send({ user: authUser, userToken });
+    } catch (err) {
+      console.error('Auth error:', err);
+      res.status(401).json({ error: 'Invalid token' });
+    }
   },
 };
 
